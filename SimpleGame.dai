@@ -1,0 +1,77 @@
+@@
+	DESCRIPTION:
+	A simple game (Occums Razor).
+
+	AUTHOR:
+	Lumberjacks Incorperated (2018)
+@@
+
+[] (GuessingGameApplication)
+{
+	^ *{
+		[GuessingGameApplication] guessingGameApplication = \[GuessingGameApplication]:createApplication;
+		\guessingGameApplication:runApplication;
+	}
+}
+
+[GuessingGameApplication : [Object]] (	
+										Object, OutputStream, SystemIO, String, 
+										InputStreamParser, Natural, ControlFlow, Conjecture, Boolean, InputStream
+									)
+	[OutputStream] standardOutput
+	[InputStreamParser] standardInputStreamParser
+	[String] secretNumber
+{
+	~ createApplication *{
+		\::new;
+		.standardOutput = \[SystemIO]:stdout;
+		.standardInputStreamParser = \[InputStreamParser]:parserWithInputStream standardInput;
+		.secretNumber = defaultSecretNumber
+	}	!{
+			[InputStream] standardInput = \[SystemIO]:stdin;
+			[String] defaultSecretNumber = \[String]:newString "";
+		}
+
+	++ runApplication *{
+		[Conjecture] secondPersonHasNotYetCorrectlyGuessedTheNumber = \[Conjecture]:assume;
+		\:requestSecretNumberFromFirstPerson;
+		(\[ControlFlow]:repeatWhile (*->\secondPersonHasNotYetCorrectlyGuessedTheNumber:isTrue)
+			(*{\:letSecondPersonGuessSecretNumber secondPersonHasNotYetCorrectlyGuessedTheNumber}))
+	}	
+
+	- letSecondPersonGuessSecretNumber *([Conjecture] secondPersonHasNotYetCorrectlyGuessedTheNumber) {
+		\:sayMessage \[String]:newString "Guess the secret number person two.";
+		[String] secretNumberThatPersonTwoGuessed = \:getNextUserInputString;
+		[Boolean] secretNumberIsCorrect = \secretNumberThatPersonTwoGuessed:isEqualTo .secretNumber;
+		\secretNumberIsCorrect:ifTrue declareThatTheSecondPersonGuessedCorrectly;
+		\secretNumberIsCorrect:ifFalse delcareThatTheSecondPersonGuessedIncorrectly
+	} !{
+			[->] declareThatTheSecondPersonGuessedCorrectly = *{
+				\secondPersonHasNotYetCorrectlyGuessedTheNumber:declareFalse;
+				\:sayMessage \[String]:newString "Yay, correct.";
+			}
+			[->] delcareThatTheSecondPersonGuessedIncorrectly = *{
+				\secondPersonHasNotYetCorrectlyGuessedTheNumber:declareTrue;
+				\:sayMessage \[String]:newString "Wrong trash is wrong.";
+			}
+		}
+
+	- requestSecretNumberFromFirstPerson *{
+		\:sayMessage messageToFirstPerson;
+		.secretNumber = \:getNextUserInputString;
+	} 	!{
+			[String] messageToFirstPerson =  \[String]:newString "Tell me the secret number person one."
+		}
+
+	- sayMessage *([String] messageToSay) {
+		\.standardOutput:writeString messageToSay;
+		\.standardOutput:writeString newline	
+			!{
+				[String] newline = \[String]:newString "\n";
+			};
+	} 
+
+	- getNextUserInputString *->
+		\.standardInputStreamParser:parseDataAsStringUntilNewline
+}
+
